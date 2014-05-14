@@ -9,8 +9,8 @@ import (
 	c "strconv"
 )
 
-func DoRead(file *os.File, offset int64, buf []byte, done chan int64) {
-	_, err := file.ReadAt(buf, offset)
+func DoRead(file *os.File, offset int64, buf *[]byte, done chan int64) {
+	_, err := file.ReadAt(*buf, offset)
 
 	if err != nil {
 		panic(fmt.Sprintf("error reading at %d: %s", offset, err.Error())) 
@@ -80,7 +80,7 @@ func main() {
 
 	var pos int64
 	for pos = 0; pos < size; pos += *chunk {
-		go DoRead(file, pos, buf, done)
+		go DoRead(file, pos, &buf, done)
 		cnt ++
 	}
 
