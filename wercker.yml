@@ -1,1 +1,9 @@
 box: wercker/golang@1.1.2
+deploy:
+    steps:
+        - github-create-release:
+            token: $GITHUB_TOKEN
+            tag: v1.0.0
+        - github-upload-asset:
+            token: $GITHUB_TOKEN
+            file: prewarm
