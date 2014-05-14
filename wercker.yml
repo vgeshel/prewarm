@@ -1,4 +1,11 @@
 box: wercker/golang@1.1.2
+build:
+  steps:
+    - script:
+        name: go build prewarm
+        code: |
+          go build -o prewarm prewarm.go
+    
 deploy:
     steps:
         - github-create-release:
