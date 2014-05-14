@@ -4,6 +4,9 @@ import (
 	"os"
 	"fmt"
 	"flag"
+	"io/ioutil"
+	s "strings"
+	c "strconv"
 )
 
 func DoRead(file *os.File, offset int64, buf []byte, done chan int64) {
@@ -20,6 +23,7 @@ func main() {
 	name := flag.String("file", "", "file to prewarm")
 	chunk := flag.Int64("chunk", 1024 * 1024, "touch each part of this size")
 	toread := flag.Int64("bufsize", 1024, "read this many bytes from each chunk")
+	use_sys := flag.Bool("sys", false, "use /sys/class/block/DEV/size to determine size instead of stat()")
 
 	flag.Parse()
 	
@@ -30,14 +34,39 @@ func main() {
 		flag.PrintDefaults()
 		os.Exit(1)
 	}
-	
-	info, err := os.Stat(*name)
 
-	if err != nil {
-		panic(err)
+	var size int64 = 0
+	if *use_sys {
+		data, err := ioutil.ReadFile(*name)
+
+		if err != nil {
+			panic(fmt.Sprintf("could not read size file for %s: %s", name, err))
+		}
+
+		str := s.TrimSpace(string(data))
+
+		blocks, err := c.ParseInt(str, 10, 64)
+
+		if err != nil {
+			panic(err)
+		}
+
+		size = blocks * 512
+	} else {
+		info, err := os.Stat(*name)
+		
+		if err != nil {
+			panic(err)
+		}
+
+		size = info.Size()
 	}
 
-	fmt.Printf("%s: %d\n", *name, info.Size())
+	if size == 0 {
+		panic(fmt.Sprintf("unable to determine size of %s", name))
+	}
+
+	fmt.Printf("%s: %d\n", *name, size)
 
 	file, err := os.Open(*name)
 
@@ -50,7 +79,7 @@ func main() {
 	cnt := 0
 
 	var pos int64
-	for pos = 0; pos < info.Size(); pos += *chunk {
+	for pos = 0; pos < size; pos += *chunk {
 		go DoRead(file, pos, buf, done)
 		cnt ++
 	}
