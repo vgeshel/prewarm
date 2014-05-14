@@ -10,7 +10,7 @@ deploy:
     steps:
         - github-create-release:
             token: $GITHUB_TOKEN
-            tag: v1.0.0
+            tag: $WERCKER_GIT_COMMIT
         - github-upload-asset:
             token: $GITHUB_TOKEN
             file: prewarm
