@@ -37,7 +37,9 @@ func main() {
 
 	var size int64 = 0
 	if *use_sys {
-		data, err := ioutil.ReadFile(fmt.Sprintf("/sys/class/block/%s/size", *name))
+		parts := s.Split(*name, "/")
+		basename := parts[len(parts) - 1]
+		data, err := ioutil.ReadFile(fmt.Sprintf("/sys/class/block/%s/size", basename))
 
 		if err != nil {
 			panic(fmt.Sprintf("could not read size file for %s: %s", name, err))
