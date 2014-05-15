@@ -4,15 +4,17 @@ import (
 	"os"
 	"fmt"
 	"flag"
+	"io"
 	"io/ioutil"
 	s "strings"
 	c "strconv"
+	t "time"
 )
 
 func DoRead(file *os.File, offset int64, buf *[]byte, done chan int64) {
-	_, err := file.ReadAt(*buf, offset)
+	bytes, err := file.ReadAt(*buf, offset)
 
-	if err != nil {
+	if err != nil && err != io.EOF && bytes <= 0 {
 		panic(fmt.Sprintf("error reading at %d: %s", offset, err.Error())) 
 	}
 
@@ -78,18 +80,22 @@ func main() {
 
 	done := make(chan int64)
 	buf := make([]byte, *toread)
-	cnt := 0
+	var pos int64 = 0
+	before := t.Now()
 
-	var pos int64
-	for pos = 0; pos < size; pos += *chunk {
-		go DoRead(file, pos, &buf, done)
-		cnt ++
-	}
+	for {
+		cnt := 0
+		for ; pos < size && cnt < 990; pos, cnt = pos + *chunk, cnt + 1 {
+			go DoRead(file, pos, &buf, done)
+		}
 
-	for cnt > 0 {
-		off := <-done;
-		cnt --;
-
-		fmt.Printf("done at %d\n", off)
+		if cnt > 0 {
+			for cnt > 0 {
+				off := <-done;
+				cnt --;
+				
+				fmt.Printf("done at %d in %v\n", off, t.Now().Sub(before))
+			}
+		}
 	}
 }
