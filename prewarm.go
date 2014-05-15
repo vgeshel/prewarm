@@ -96,6 +96,8 @@ func main() {
 				
 				fmt.Printf("done at %d in %v\n", off, t.Now().Sub(before))
 			}
+		} else {
+			break
 		}
 	}
 }
